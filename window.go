@@ -40,9 +40,9 @@ func (a *Root)Append(i interface{}) {
 
 	if a.head == nil {
 		a.head = n
-	}else if a.head.ts <= deadline {
-		a.head = a.head.Next
 	}
+
+	a.moveOutExpired(deadline)
 
 	if a.tail == nil {
 		a.tail = a.head
@@ -64,4 +64,13 @@ func (a *Root)List()[]interface{} {
 	}
 
 	return array
+}
+
+func (a *Root)moveOutExpired(deadline int64) {
+	if a.head.ts > deadline {
+		return
+	}else {
+		a.head = a.head.Next
+		a.moveOutExpired(deadline)
+	}
 }
