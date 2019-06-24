@@ -35,17 +35,17 @@ func (a *Root)Append(i interface{}) {
 
 	n := &node {
 		ts: nowTs,
+		Next: nil,
 		Value: i,
 	}
 
-	if a.head == nil {
-		a.head = n
+	if a.head != nil {
+		a.moveOutExpired(deadline)
 	}
 
-	a.moveOutExpired(deadline)
-
 	if a.tail == nil {
-		a.tail = a.head
+		a.head = n
+		a.tail = n
 	}else {
 		a.tail.Next = n
 		a.tail = n
@@ -67,7 +67,9 @@ func (a *Root)List()[]interface{} {
 }
 
 func (a *Root)moveOutExpired(deadline int64) {
-	if a.head.ts > deadline {
+	if a.head == nil {
+		a.tail = nil
+	}else if a.head.ts > deadline {
 		return
 	}else {
 		a.head = a.head.Next
