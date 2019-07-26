@@ -20,19 +20,23 @@ func TestNewArray (t *testing.T) {
 }
 
 func TestMoveOut(t *testing.T) {
-	arr := NewArray(time.Second)
+	arr := NewArray(2 * time.Second)
 
 	for i:=0; i<10; i++{
 		arr.Append(i)
 	}
 
-	time.Sleep(time.Second)
-
-	for i:=0; i<10; i++{
-		arr.Append(i)
-	}
+	time.Sleep(3 * time.Second)
 
 	list := arr.List()
+
+	assert.Equal(t, 0, len(list))
+
+	for i:=0; i<10; i++{
+		arr.Append(i)
+	}
+
+	list = arr.List()
 
 	assert.Equal(t, 10, len(list))
 }

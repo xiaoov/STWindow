@@ -10,14 +10,20 @@ type Root struct {
 	tail *node
 	mutex sync.RWMutex
 	period time.Duration
+	ticker *time.Ticker
 }
 
 func NewArray(t time.Duration) *Root {
-	return &Root{
+	r := &Root{
 		head: nil,
 		tail: nil,
 		period: t,
+		ticker: time.NewTicker(1 * time.Second),
 	}
+
+	go r.periodicClear()
+
+	return r
 }
 
 type node struct {
@@ -31,16 +37,11 @@ func (a *Root)Append(i interface{}) {
 	defer a.mutex.Unlock()
 
 	nowTs := time.Now().UnixNano()
-	deadline := nowTs - a.period.Nanoseconds()
 
 	n := &node {
 		ts: nowTs,
 		Next: nil,
 		Value: i,
-	}
-
-	if a.head != nil {
-		a.moveOutExpired(deadline)
 	}
 
 	if a.tail == nil {
@@ -64,6 +65,18 @@ func (a *Root)List()[]interface{} {
 	}
 
 	return array
+}
+
+func (a *Root)periodicClear() {
+	for {
+		nowTs := time.Now().UnixNano()
+		deadline := nowTs - a.period.Nanoseconds()
+
+		select {
+		case <- a.ticker.C:
+			a.moveOutExpired(deadline)
+		}
+	}
 }
 
 func (a *Root)moveOutExpired(deadline int64) {
