@@ -87,9 +87,6 @@ func (a *Root)AppendInt(i int) {
 	defer a.mutex.Unlock()
 
 	n := C.Append(unsafe.Pointer(uintptr(i)))
-	//
-	//log.Printf("i: %b\n", i)
-	//log.Printf("&i: %x\n", unsafe.Pointer(&i))
 
 	if a.tail == nil {
 		a.head = n
@@ -107,7 +104,7 @@ func (a *Root)List()[]interface{} {
 	var array []interface{}
 	var p = a.head
 	for p != nil {
-		array = append(array, p.Value)
+		array = append(array, int(uintptr(p.Value)))
 		p = p.Next
 	}
 
@@ -132,14 +129,8 @@ func (a *Root)moveOutExpired(deadline uint64) {
 	if a.head == nil {
 		a.tail = nil
 	}else if uint64(a.head.ts) > deadline {
-		//log.Println("not now")
-		//log.Println(uint64(a.head.ts))
-		//log.Println(deadline)
 		return
 	}else {
-		//log.Println("start to clear...")
-		//log.Println(uint64(a.head.ts))
-		//log.Println(deadline)
 		next := C.Remove(a.head)
 		a.head = next
 		a.moveOutExpired(deadline)
