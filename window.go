@@ -8,11 +8,11 @@ package STWindow
 
 typedef struct Node{
     struct Node *Next;
-    void *Value;
+    int Value;
     uint32_t ts;
 }Node;
 
-Node *Append(void *i){
+Node *Append(int i){
 	time_t t;
 	t = time(NULL);
 
@@ -33,14 +33,13 @@ Node *Remove(Node *n){
 	free(n);
 	return temp;
 }
- */
+*/
 import "C"
 
 import (
 	"log"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 //func  main () {
@@ -56,17 +55,17 @@ import (
 //}
 
 type Root struct {
-	head *C.struct_Node
-	tail *C.struct_Node
-	mutex sync.RWMutex
+	head   *C.struct_Node
+	tail   *C.struct_Node
+	mutex  sync.RWMutex
 	period time.Duration
 	ticker *time.Ticker
 }
 
 func NewArray(t time.Duration) *Root {
 	r := &Root{
-		head: nil,
-		tail: nil,
+		head:   nil,
+		tail:   nil,
 		period: t,
 		ticker: time.NewTicker(1 * time.Second),
 	}
@@ -75,6 +74,7 @@ func NewArray(t time.Duration) *Root {
 
 	return r
 }
+
 //
 //type node struct {
 //	Next *node
@@ -82,62 +82,63 @@ func NewArray(t time.Duration) *Root {
 //	ts int64
 //}
 //
-func (a *Root)AppendInt(i int) {
+func (a *Root) AppendInt(i int) {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
-	n := C.Append(unsafe.Pointer(uintptr(i)))
+	n := C.Append(C.int(i))
 
 	if a.tail == nil {
 		a.head = n
 		a.tail = n
-	}else {
+	} else {
 		a.tail.Next = n
 		a.tail = n
 	}
 }
+
 //
-func (a *Root)List()[]interface{} {
+func (a *Root) List() []interface{} {
 	a.mutex.RLock()
 	defer a.mutex.RUnlock()
 
 	var array []interface{}
 	var p = a.head
 	for p != nil {
-		array = append(array, int(uintptr(p.Value)))
+		array = append(array, p.Value)
 		p = p.Next
 	}
 
 	return array
 }
+
 //
-func (a *Root)periodicClear() {
+func (a *Root) periodicClear() {
 	for {
 		nowTs := time.Now().Unix()
 		deadline := uint64(nowTs - int64(a.period.Seconds()))
 
-
-
 		select {
-		case <- a.ticker.C:
+		case <-a.ticker.C:
 			a.moveOutExpired(deadline)
 		}
 	}
 }
+
 //
-func (a *Root)moveOutExpired(deadline uint64) {
+func (a *Root) moveOutExpired(deadline uint64) {
 	if a.head == nil {
 		a.tail = nil
-	}else if uint64(a.head.ts) > deadline {
+	} else if uint64(a.head.ts) > deadline {
 		return
-	}else {
+	} else {
 		next := C.Remove(a.head)
 		a.head = next
 		a.moveOutExpired(deadline)
 	}
 }
 
-func (a *Root)Print() {
+func (a *Root) Print() {
 	next := a.head
 	for next != nil {
 		log.Println("---")
